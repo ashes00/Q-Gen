@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            position: relative;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        textarea {
+            width: 80%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            height: 80px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #qrCodeResult {
+            margin-top: 20px;
+        }
+
+        canvas {
+            margin-top: 20px;
+        }
+
+        /* Reset button style */
+        #resetButton {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background-color: #4CAF50; /* Same as generate button */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            transition: background-color 0.3s ease;
+        }
+
+        #resetButton:hover {
+            background-color: #45a049;
+        }
+
+        #resetButton:after {
+            content: "↻"; /* Minimal reset icon */
+            font-size: 18px;
+        }
+
+        /* Tooltip for reset button */
+        #resetButtonTooltip {
+            display: none;
+            position: fixed;
+            left: 50%;
+            bottom: 65px;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Show tooltip when hovering over reset button */
+        #resetButton:hover + #resetButtonTooltip {
+            display: block;
+        }
+
+        /* Download button style (bottom left corner) */
+        #downloadButton {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background-color: #4CAF50; /* Same as reset button */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            transition: background-color 0.3s ease;
+        }
+
+        #downloadButton:hover {
+            background-color: #45a049;
+        }
+
+        #downloadButton:after {
+            content: "↓"; /* Download icon */
+            font-size: 18px;
+        }
+
+        /* Tooltip for download button */
+        #downloadButtonTooltip {
+            display: none;
+            position: fixed;
+            left: 50%;
+            bottom: 65px;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Show tooltip when hovering over download button */
+        #downloadButton:hover + #downloadButtonTooltip {
+            display: block;
+        }
+
+        /* Public IP Address Display (bottom right corner) */
+        #publicIpDisplay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: none; /* Initially hidden */
+        }
+
+        /* GitHub Button Style (bottom left corner) */
+        #githubButton {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg');
+            background-size: 20px 20px;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        #githubButton:hover {
+            background-color: #444;
+        }
+
+        /* Tooltip for GitHub button */
+        #githubButtonTooltip {
+            display: none;
+            position: fixed;
+            left: 50%;
+            bottom: 65px;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Show tooltip when hovering over GitHub button */
+        #githubButton:hover + #githubButtonTooltip {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator</h1>
+        <input type="text" id="inputText" placeholder="Enter text, URL, or email" oninput="handleInputChange()" />
+        
+        <!-- Email Fields (hidden initially) -->
+        <div id="emailFields" style="display: none;">
+            <input type="text" id="emailSubject" placeholder="Enter subject" />
+            <textarea id="emailBody" placeholder="Enter body text"></textarea>
+        </div>
+
+        <!-- Image Upload for Center Logo -->
+        <input type="file" id="imageUpload" accept="image/*" />
+
+        <button onclick="generateQRCode()">Generate QR Code</button>
+        <div id="qrCodeResult"></div>
+
+        <!-- Reset Button (inside the container) -->
+        <button id="resetButton" onclick="resetTool()"></button>
+        <div id="resetButtonTooltip">Start Over</div>
+
+        <!-- Download Button (inside the container) -->
+        <button id="downloadButton" onclick="downloadQRCode()"></button>
+        <div id="downloadButtonTooltip">Download</div>
+    </div>
+
+    <!-- Public IP Display -->
+    <div id="publicIpDisplay"></div>
+
+    <!-- GitHub Button (bottom left corner) -->
+    <button id="githubButton" onclick="window.open('https://github.com/GITHUB_USERNAME', '_blank')"></button>
+    <div id="githubButtonTooltip">GITHUB_USERNAME</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script>
+        let uploadedImage = null;
+        let qrCodeCanvas = null;
+
+        // Fetch and display public IP address
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                const ipDisplay = document.getElementById('publicIpDisplay');
+                ipDisplay.textContent = 'Your Public IP: ' + data.ip;
+                ipDisplay.style.display = 'block'; // Show the IP display
+            })
+            .catch(error => {
+                console.error('Error fetching IP address:', error);
+            });
+
+        // Handle image file upload
+        document.getElementById("imageUpload").addEventListener("change", function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedImage = new Image();
+                    uploadedImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function handleInputChange() {
+            const inputText = document.getElementById("inputText").value;
+            const emailFields = document.getElementById("emailFields");
+
+            // Show email fields if input is an email
+            if (inputText.includes("@")) {
+                emailFields.style.display = "block";
+            } else {
+                emailFields.style.display = "none";
+            }
+        }
+
+        function generateQRCode() {
+            const text = document.getElementById("inputText").value;
+            const qrCodeResult = document.getElementById("qrCodeResult");
+            const emailSubject = document.getElementById("emailSubject").value;
+            const emailBody = document.getElementById("emailBody").value;
+
+            // Clear previous QR code if any
+            qrCodeResult.innerHTML = "";
+
+            if (text === "") {
+                alert("Please enter some text or URL.");
+                return;
+            }
+
+            let qrData = text;
+
+            // If the input is an email, append subject and body
+            if (text.includes("@")) {
+                qrData = `mailto:${text}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+            }
+
+            // Generate QR code as a Data URL
+            QRCode.toDataURL(qrData, { width: 300, height: 300 }, function (error, qrCodeDataURL) {
+                if (error) {
+                    console.error(error);
+                    alert("Error generating QR code.");
+                    return;
+                }
+
+                // Create a canvas element for drawing the QR code with the uploaded logo
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const qrImage = new Image();
+                qrImage.src = qrCodeDataURL;
+
+                // Wait for the QR code image to load
+                qrImage.onload = function () {
+                    // Set canvas dimensions
+                    canvas.width = qrImage.width;
+                    canvas.height = qrImage.height;
+
+                    // Draw the QR code onto the canvas
+                    ctx.drawImage(qrImage, 0, 0, qrImage.width, qrImage.height);
+
+                    // If an image is uploaded, draw it at the center of the QR code
+                    if (uploadedImage) {
+                        const logoSize = 50; // Adjust logo size
+                        const x = (canvas.width - logoSize) / 2;
+                        const y = (canvas.height - logoSize) / 2;
+
+                        // Draw the uploaded image in the center
+                        ctx.drawImage(uploadedImage, x, y, logoSize, logoSize);
+                    }
+
+                    // Append the canvas with the QR code and uploaded logo to the result div
+                    qrCodeResult.appendChild(canvas);
+
+                    // Store the canvas for download
+                    qrCodeCanvas = canvas;
+
+                    // Show reset and download buttons
+                    document.getElementById("resetButton").style.display = "block";
+                    document.getElementById("downloadButton").style.display = "block";
+                };
+            });
+        }
+
+        // Reset tool to its initial state
+        function resetTool() {
+            // Clear the QR code and reset inputs
+            document.getElementById("inputText").value = "";
+            document.getElementById("emailSubject").value = "";
+            document.getElementById("emailBody").value = "";
+            document.getElementById("qrCodeResult").innerHTML = "";
+            document.getElementById("imageUpload").value = ""; // Reset image upload
+
+            // Hide reset and download buttons
+            document.getElementById("resetButton").style.display = "none";
+            document.getElementById("downloadButton").style.display = "none";
+        }
+
+        // Download QR code as a PNG
+        function downloadQRCode() {
+            if (!qrCodeCanvas) {
+                alert("Please generate a QR code first.");
+                return;
+            }
+
+            // Create a link element
+            const link = document.createElement('a');
+            link.href = qrCodeCanvas.toDataURL("image/png");
+            link.download = "qr_code.png"; // Set download filename
+            link.click(); // Trigger download
+        }
+    </script>
+</body>
+</html>
+
