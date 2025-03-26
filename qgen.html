@@ -28,9 +28,16 @@
         }
 
         h1 {
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Slightly reduced bottom margin */
             font-size: 24px;
             color: #333;
+        }
+
+        /* Version display style */
+        #version {
+            font-size: 14px; /* Smaller font size than the title */
+            color: #777; /* Lighter color */
+            margin-bottom: 20px; /* Small space above version */
         }
 
         input[type="text"], input[type="file"] {
@@ -68,6 +75,7 @@
 
         #qrCodeResult {
             margin-top: 20px;
+            margin-bottom: 30px; /* Added margin to provide space between the image and buttons */
         }
 
         canvas {
@@ -104,7 +112,7 @@
             display: none;
             position: fixed;
             left: 50%;
-            bottom: 65px;
+            bottom: 115px; /* Shifted 50px down */
             transform: translateX(-50%);
             background-color: #333;
             color: white;
@@ -149,7 +157,7 @@
             display: none;
             position: fixed;
             left: 50%;
-            bottom: 65px;
+            bottom: 115px; /* Shifted 50px down */
             transform: translateX(-50%);
             background-color: #333;
             color: white;
@@ -175,6 +183,52 @@
             border-radius: 4px;
             font-size: 14px;
             display: none; /* Initially hidden */
+        }
+
+        /* Copy button style (centered between reset and download) */
+        #copyButton {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            transition: background-color 0.3s ease;
+        }
+
+        #copyButton:hover {
+            background-color: #45a049;
+        }
+
+        #copyButton:after {
+            content: "📋"; /* Clipboard icon */
+            font-size: 18px;
+        }
+
+        /* Tooltip for copy button */
+        #copyButtonTooltip {
+            display: none;
+            position: fixed;
+            left: 50%;
+            bottom: 115px; /* Shifted 50px down */
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        /* Show tooltip when hovering over copy button */
+        #copyButton:hover + #copyButtonTooltip {
+            display: block;
         }
 
         /* GitHub Button Style (bottom left corner) */
@@ -226,6 +280,9 @@
 <body>
     <div class="container">
         <h1>QR Code Generator</h1>
+        <!-- Version string dynamically pulled from the varVERSION variable -->
+        <div id="version"></div>
+        
         <input type="text" id="inputText" placeholder="Enter text, URL, or email" oninput="handleInputChange()" />
         
         <!-- Email Fields (hidden initially) -->
@@ -244,6 +301,10 @@
         <button id="resetButton" onclick="resetTool()"></button>
         <div id="resetButtonTooltip">Start Over</div>
 
+        <!-- Copy Button (centered between reset and download) -->
+        <button id="copyButton" onclick="copyQRCodeToClipboard()"></button>
+        <div id="copyButtonTooltip">Copy QR Code</div>
+
         <!-- Download Button (inside the container) -->
         <button id="downloadButton" onclick="downloadQRCode()"></button>
         <div id="downloadButtonTooltip">Download</div>
@@ -253,11 +314,17 @@
     <div id="publicIpDisplay"></div>
 
     <!-- GitHub Button (bottom left corner) -->
-    <button id="githubButton" onclick="window.open('https://github.com/GITHUB_USERNAME', '_blank')"></button>
-    <div id="githubButtonTooltip">GITHUB_USERNAME</div>
+    <button id="githubButton" onclick="window.open('https://github.com/USERNAME', '_blank')"></button>
+    <div id="githubButtonTooltip">USERNAME</div>
 
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
+        // Declare the version variable
+        const varVERSION = "1.2"; // This is the version of the tool
+
+        // Set the version string dynamically using the varVERSION variable
+        document.getElementById('version').textContent = `Version: ${varVERSION}`;
+
         let uploadedImage = null;
         let qrCodeCanvas = null;
 
@@ -358,9 +425,10 @@
                     // Store the canvas for download
                     qrCodeCanvas = canvas;
 
-                    // Show reset and download buttons
+                    // Show reset, copy, and download buttons
                     document.getElementById("resetButton").style.display = "block";
                     document.getElementById("downloadButton").style.display = "block";
+                    document.getElementById("copyButton").style.display = "block";
                 };
             });
         }
@@ -374,9 +442,10 @@
             document.getElementById("qrCodeResult").innerHTML = "";
             document.getElementById("imageUpload").value = ""; // Reset image upload
 
-            // Hide reset and download buttons
+            // Hide reset, copy, and download buttons
             document.getElementById("resetButton").style.display = "none";
             document.getElementById("downloadButton").style.display = "none";
+            document.getElementById("copyButton").style.display = "none";
         }
 
         // Download QR code as a PNG
@@ -389,8 +458,26 @@
             // Create a link element
             const link = document.createElement('a');
             link.href = qrCodeCanvas.toDataURL("image/png");
-            link.download = "qr_code.png"; // Set download filename
-            link.click(); // Trigger download
+            link.download = "qr_code.png"; // Set the default file name
+            link.click(); // Trigger the download
+        }
+
+        // Copy the QR code to the clipboard
+        function copyQRCodeToClipboard() {
+            if (!qrCodeCanvas) {
+                alert("Please generate a QR code first.");
+                return;
+            }
+
+            // Convert canvas to image and copy to clipboard
+            qrCodeCanvas.toBlob(function(blob) {
+                const item = new ClipboardItem({ "image/png": blob });
+                navigator.clipboard.write([item]).then(function() {
+                    alert("QR code copied to clipboard.");
+                }).catch(function(err) {
+                    alert("Error copying QR code to clipboard.");
+                });
+            });
         }
     </script>
 </body>
